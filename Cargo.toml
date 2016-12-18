@@ -1,0 +1,9 @@
+[package]
+name = "kelxquoia"
+version = "0.1.0"
+authors = ["serprex"]
+repository = "https://github.com/serprex/Kelxquoia"
+license = "MIT"
+
+[dependencies]
+fnv = "1.0.5"
