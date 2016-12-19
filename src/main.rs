@@ -24,7 +24,6 @@ fn main() {
 				field.push(line.chars().collect::<Vec<char>>());
 			}
 		}
-		let height = field.len();
 		let mut width = 0;
 		for row in field.iter() {
 			if row.len() > width { width = row.len() }
@@ -42,7 +41,7 @@ fn main() {
 				Dir::E => {
 					xy.0 += 1;
 					if xy.0 == field[xy.1].len() { break }
-					xy.1+1 < height && xy.0 < field[xy.1+1].len() && field[xy.1+1][xy.0] == '\''
+					xy.1+1 < field.len() && xy.0 < field[xy.1+1].len() && field[xy.1+1][xy.0] == '\''
 				},
 				Dir::W => {
 					if xy.0 == 0 { break }
@@ -82,7 +81,7 @@ fn main() {
 						} {
 							if let Some(Cell::Row(row)) = stack.pop() {
 								if let Some(&mut Cell::Grid(ref mut grid)) = stack.last_mut() {
-									grid.add(row);
+									grid.push(row);
 								}
 							}
 						}
@@ -104,70 +103,78 @@ fn main() {
 						} {
 							if let Some(Cell::Grid(rep)) = stack.pop() {
 								if let Some(Cell::Grid(pat)) = stack.pop() {
-									if rep.cols <= pat.cols && rep.rows.len() <= pat.rows.len() {
-										let mut patwild = 0;
-										for row in pat.rows.iter() {
-											for &c in row.iter() {
-												if c == '\0' {
-													patwild += 1;
-												}
-											}
-										}
-										if patwild < 2 {
-											let mut repwild = 0;
-											for row in rep.rows.iter() {
+									if rep.len() <= pat.len() {
+										let repcols = rep.iter().fold(0, |mx, v| if mx >= v.len() { mx } else { v.len() });
+										let patcols = pat.iter().fold(0, |mx, v| if mx >= v.len() { mx } else { v.len() });
+										if repcols <= patcols {
+											let mut patwild = 0;
+											for row in pat.iter() {
 												for &c in row.iter() {
 													if c == '\0' {
-														repwild += 1;
+														patwild += 1;
 													}
 												}
 											}
-											if repwild <= patwild {
-												let mut matches = Vec::new();
-												let mut wildch = '\0';
-												for my in 0..height {
-													'nextmatch:
-													for mx in 0..width {
-														for (py, row) in pat.rows.iter().enumerate() {
-															if my + py == height { continue 'nextmatch }
-															for (px, &pch) in row.iter().enumerate() {
-																if mx + px == width { continue 'nextmatch }
-																let mch = *field[my + py].get(mx + px).unwrap_or(&' ');
-																if pch == '\0' {
-																	wildch = mch;
-																	continue
-																}
-																if pch != ' ' && mch != pch {
-																	continue 'nextmatch
+											if patwild < 2 {
+												let mut repwild = 0;
+												for row in rep.iter() {
+													for &c in row.iter() {
+														if c == '\0' {
+															repwild += 1;
+														}
+													}
+												}
+												if repwild <= patwild {
+													let mut matches = Vec::new();
+													let mut wildch = '\0';
+													for my in 0..field.len() {
+														'nextmatch:
+														for mx in 0..width {
+															for (py, row) in pat.iter().enumerate() {
+																for (px, &pch) in row.iter().enumerate() {
+																	let mch = *field[my + py].get(mx + px).unwrap_or(&' ');
+																	if pch == '\0' {
+																		wildch = mch;
+																		continue
+																	}
+																	if pch != ' ' && (mx + px == width || my + py == field.len() || mch != pch) {
+																		continue 'nextmatch
+																	}
 																}
 															}
-														}
-														matches.push((mx, my, wildch));
-													}
-												}
-												let pwidth = pat.cols;
-												let pheight = pat.rows.len();
-												let mut overlap = FnvHashSet::default();
-												for (idx1, &(x1, y1, _)) in matches.iter().enumerate() {
-													for (idx2, &(x2, y2, _)) in matches[idx1+1..].iter().enumerate() {
-														if x1 <= x2 && y1 <= y2 && x1 + pwidth > x2 && y1 + pheight > y2 {
-															overlap.insert(idx1);
-															overlap.insert(idx1 + 1 + idx2);
+															matches.push((mx, my, wildch));
 														}
 													}
-												}
-												for (idx, &(x, y, wc)) in matches.iter().enumerate() {
-													if !overlap.contains(&idx) {
-														for (ry, row) in rep.rows.iter().enumerate() {
-															for (rx, &rch) in row.iter().enumerate() {
-																let ch = if rch == '\0' { wc } else { rch };
-																if x + rx < field[y + ry].len() {
-																	field[y + ry][x + rx] = ch;
-																} else {
-																	while x + rx - 1 > field[y + ry].len() {
-																		field[y + ry].push(' ');
+													let pwidth = patcols;
+													let pheight = pat.len();
+													let mut overlap = FnvHashSet::default();
+													for (idx1, &(x1, y1, _)) in matches.iter().enumerate() {
+														for (idx2, &(x2, y2, _)) in matches[idx1+1..].iter().enumerate() {
+															if x1 <= x2 && y1 <= y2 && x1 + pwidth > x2 && y1 + pheight > y2 {
+																overlap.insert(idx1);
+																overlap.insert(idx1 + 1 + idx2);
+															}
+														}
+													}
+													for (idx, &(x, y, wc)) in matches.iter().enumerate() {
+														if !overlap.contains(&idx) {
+															for (ry, row) in rep.iter().enumerate() {
+																if y + ry == field.len() {
+																	field.push(Vec::new());
+																}
+																while x >= field[y + ry].len() {
+																	field[y + ry].push(' ');
+																}
+																for (rx, &rch) in row.iter().enumerate() {
+																	let ch = if rch == '\0' { wc } else { rch };
+																	if x + rx < field[y + ry].len() {
+																		field[y + ry][x + rx] = ch;
+																	} else {
+																		field[y + ry].push(ch);
+																		if field[y + ry].len() > width {
+																			width += 1;
+																		}
 																	}
-																	field[y + ry].push(ch);
 																}
 															}
 														}
@@ -204,21 +211,6 @@ fn main() {
 enum Dir { E, N, S, W }
 
 enum Cell {
-	Grid(Grid),
+	Grid(Vec<Vec<char>>),
 	Row(Vec<char>),
-}
-
-#[derive(Default)]
-struct Grid {
-	pub cols: usize,
-	pub rows: Vec<Vec<char>>,
-}
-
-impl Grid {
-	fn add(&mut self, row: Vec<char>) {
-		if row.len() > self.cols {
-			self.cols = row.len();
-		}
-		self.rows.push(row);
-	}
 }
