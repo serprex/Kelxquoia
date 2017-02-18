@@ -160,7 +160,7 @@ fn main() {
 														if !overlap.contains(&idx) {
 															for (ry, row) in rep.iter().enumerate() {
 																if y + ry == field.len() {
-																	field.push(Vec::new());
+																	field.push(Vec::with_capacity(x));
 																}
 																while x >= field[y + ry].len() {
 																	field[y + ry].push(' ');
