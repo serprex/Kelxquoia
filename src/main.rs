@@ -2,23 +2,23 @@ extern crate fnv;
 use std::env;
 use std::fs;
 use std::io::{BufRead, BufReader};
+use std::usize;
 use fnv::FnvHashSet;
 
 fn main() {
 	if let Some(a) = env::args().nth(1) {
 		let mut field = Vec::new();
 		let f = fs::File::open(&a).expect("Failed to open file");
-		let mut sxy: Option<(usize, usize)> = None;
+		let mut xy = (usize::MAX, usize::MAX);
 		let f = BufReader::new(f);
 		for (y, line) in f.lines().enumerate() {
 			if let Ok(line) = line {
 				for (x, c) in line.chars().enumerate() {
 					if c == '$' {
-						if sxy.is_some() {
-							println!("Duplicate $");
-							return
+						if xy != (usize::MAX, usize::MAX) {
+							return println!("Duplicate $");
 						}
-						sxy = Some((x, y));
+						xy = (x, y);
 					}
 				}
 				field.push(line.chars().collect::<Vec<char>>());
@@ -28,12 +28,9 @@ fn main() {
 		for row in field.iter() {
 			if row.len() > width { width = row.len() }
 		}
-		let mut xy = if let Some(sxy) = sxy {
-			sxy
-		} else {
-			println!("No $");
-			return
-		};
+		if xy == (usize::MAX, usize::MAX) {
+			return println!("No $");
+		}
 		let mut stack = Vec::new();
 		let mut dir = Dir::E;
 		loop {
