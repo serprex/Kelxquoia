@@ -101,8 +101,8 @@ fn main() {
 							if let Some(Cell::Grid(rep)) = stack.pop() {
 								if let Some(Cell::Grid(pat)) = stack.pop() {
 									if rep.len() <= pat.len() {
-										let repcols = rep.iter().fold(0, |mx, v| if mx >= v.len() { mx } else { v.len() });
-										let patcols = pat.iter().fold(0, |mx, v| if mx >= v.len() { mx } else { v.len() });
+										let repcols = rep.iter().map(|v| v.len()).max().unwrap_or(0);
+										let patcols = pat.iter().map(|v| v.len()).max().unwrap_or(0);
 										if repcols <= patcols {
 											let mut patwild = 0;
 											for row in pat.iter() {
