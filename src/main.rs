@@ -157,7 +157,7 @@ fn main() {
 														if !overlap.contains(&idx) {
 															for (ry, row) in rep.iter().enumerate() {
 																if y + ry == field.len() {
-																	field.push(Vec::with_capacity(x));
+																	field.push(Vec::with_capacity(x + row.len()));
 																}
 																while x >= field[y + ry].len() {
 																	field[y + ry].push(' ');
