@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["serprex"]
 repository = "https://github.com/serprex/Kelxquoia"
 license = "MIT"
+edition = "2018"
 
 [dependencies]
-fnv = "1.0.5"
+fxhash = "0.2"
